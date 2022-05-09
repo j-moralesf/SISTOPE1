@@ -72,7 +72,7 @@ int main(){
 		FILE* fp = fopen("new.txt", "w");
 		
 		read(p2[0], inbuff, MSGSIZE);
-		fprintf(fp, "%s\n ended", inbuff);
+		fprintf(fp, "%s\n manito sadsadsadsa pa lacasa\n", inbuff);
 
 		fclose(fp);
 	}
