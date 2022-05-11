@@ -6,93 +6,140 @@
 #include <sys/wait.h>
 
 #define MSGSIZE 64
-
-char* msg1 = "Hola padre! soy tu hijo";
-char* msg2 = "No me hables mas";
+#define DEF_SIZE 512
 
 
+typedef struct hijo{
+
+    int wPipe[2]; //Pipe donde el hijo escribe (w) y el padre lee.
+    int rPipe[2]; //Pipe donde el hijo lee (r) y el padre escribe.
+    int pid;      //Pid del proceso.
+    struct hijo* sig;
+}hijo;
+
+
+hijo* crearHijo(){
+
+	hijo* newHijo= (hijo*) malloc(sizeof(hijo));
+	newHijo->sig= NULL;
+
+	return newHijo;
+}
+
+hijo* saveChild(hijo* child, int rBuff[2], int wBuff[2], int pid){
+
+	child->wPipe[0] = wBuff[0];
+	child->wPipe[1] = wBuff[1];
+	child->rPipe[0] = rBuff[0];
+	child->rPipe[1] = rBuff[1];
+	child->pid = pid;
+
+	return child;
+}
+
+
+hijo* agregarHijo(hijo* firstChild, hijo* child){
+
+	hijo* aux = firstChild;
+
+	if(firstChild == NULL){
+		return child;
+	}
+
+	while( aux->sig != NULL){
+		aux = aux ->sig;
+	}
+
+	aux->sig = child;
+
+	return firstChild;
+}
 
 
 int main(){
 
 	char inbuff[MSGSIZE];
-	int p1[2], p2[2], i;
+
+	hijo* firstChild = NULL;
 
 	pid_t pid;
 	int stat;
 
 	int saved_stdout= dup(STDOUT_FILENO);
 
-	if(pipe(p1) < 0){
-		exit(1);
-	}
-	if(pipe(p2) < 0){
-		exit(1);
-	}
+	int k=0;
 
 
-	if((pid= fork()) == -1){
-		printf("error. Terminando programa\n");
-	}
-	if(pid == 0){
-		close(p1[1]);
-		close(p2[0]);
-		
-		if( (dup2(p1[0], STDIN_FILENO)) == -1){
-			printf("Error en dup2\n");
-			exit(1);
-		}
-		
-		if(dup2(p2[1], STDOUT_FILENO) == -1){
-			printf("Error en dup2\n");
+	char* msg1 = "Mensaje determinado";
+
+	while(k <10){
+
+		int pipe1[2];
+		int pipe2[2];
+
+
+		if( pipe(pipe1)== -1 || pipe(pipe2) == -1){
+			printf("Error al crear el Pipe\n");
 			exit(1);
 		}
 
-		//El hijo escribe por p1[1] y lee por p2[0]
-		write(p2[1], msg1, MSGSIZE);
-		//printf("Soy el hijo pid =%d\n", pid);
-	}
-	else{
-		//El padre escribe por p1[0] y lee por p2[1]
-		close(p1[0]);
-		close(p2[1]);
-		
-		
-		if(dup2(p2[0], STDIN_FILENO) == -1){
-			printf("Error en dup2\n");
-			exit(1);
-		};
-		if( (dup2(p1[1], STDOUT_FILENO)) == -1){
-			printf("Error en dup2\n");
+		if((pid= fork()) == -1){
+			printf("error. Terminando programa\n");
 			exit(1);
 		}
+		if(pid == 0){
+			close(pipe1[1]);
+			close(pipe2[0]);
+			
+			if( (dup2(pipe1[0], STDIN_FILENO)) == -1){
+				printf("Error en dup2\n");
+				exit(1);
+			}
+			
+			if(dup2(pipe2[1], STDOUT_FILENO) == -1){
+				printf("Error en dup2\n");
+				exit(1);
+			}
+			write(pipe2[1], msg1 ,MSGSIZE);
+			exit(1);
+		}
+		else if(pid != 0){
+			//El padre escribe por pipe1[0] y lee por pipe2[1]
+			close(pipe1[0]);
+			close(pipe2[1]);
+			
+			if(dup2(pipe2[0], STDIN_FILENO) == -1){
+				printf("Error en dup2\n");
+				exit(1);
+			};
+			if( (dup2(pipe1[1], STDOUT_FILENO)) == -1){
+				printf("Error en dup2\n");
+				exit(1);
+			}
 
-		pid_t cpid = waitpid(pid, &stat, 0);
+			pid_t cpid = waitpid(pid, &stat, 0);
 
-		FILE* fp = fopen("new.txt", "w");
-		
-		read(p2[0], inbuff, MSGSIZE);
-		fprintf(fp, "%s\n manito sadsadsadsa pa lacasa\n", inbuff);
+			FILE* fp = fopen("new4.txt", "a");
+			
+			read(pipe2[0], inbuff, MSGSIZE);
+			fprintf(fp, "%d\t%s\t pid=%d\n", k,inbuff, pid);
 
-		fclose(fp);
+			fclose(fp);
+
+
+			hijo* child = crearHijo();
+			child = saveChild(child, pipe2, pipe1, pid);
+
+			if(firstChild == NULL){
+				firstChild = child;
+			}
+			else{
+				firstChild=agregarHijo(firstChild, child);
+			}
+		}
+		k++;
 	}
 
-	if(pid != 0 && dup2(saved_stdout, p1[1]) != -1){
-		printf("Proceso exitoso\n");
-	}
-	else{
-		exit(1);
-	}
 
-	printf("Proceso de pid=%d terminado\n", pid);
 	return 0;
 }
-
-
-
-
-
-
-
-
-
