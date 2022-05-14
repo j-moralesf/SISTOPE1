@@ -1,50 +1,100 @@
-linea numero  1
-linea numero  2
-linea numero  3
-linea numero  4
-linea numero  5
-linea numero  6
-linea numero  7
-linea numero  8
-linea numero  9
-linea numero  10
-linea numero  11
-linea numero  12
-linea numero  13
-linea numero  14
-linea numero  15
-linea numero  16
-linea numero  17
-linea numero  18
-linea numero  19
-linea numero  20
-linea numero  21
-linea numero  22
-linea numero  23
-linea numero  24
-linea numero  25
-linea numero  26
-linea numero  27
-linea numero  28
-linea numero  29
-linea numero  30
-linea numero  31
-linea numero  32
-linea numero  33
-linea numero  34
-linea numero  35
-linea numero  36
-linea numero  37
-linea numero  38
-linea numero  39
-linea numero  40
-linea numero  41
-linea numero  42
-linea numero  43
-linea numero  44
-linea numero  45
-linea numero  46
-linea numero  47
-linea numero  48
-linea numero  49
-linea numero  50
+0 HIJO std_out=1 y std_in=0
+ pid=39058
+rPipe= 7 8 wPipe= 4 5
+
+
+1 HIJO std_out=1 y std_in=0
+ pid=39059
+rPipe= 9 10 wPipe= 4 8
+
+
+2 HIJO std_out=1 y std_in=0
+ pid=39060
+rPipe= 11 12 wPipe= 4 10
+
+
+3 HIJO std_out=1 y std_in=0
+ pid=39061
+rPipe= 13 14 wPipe= 4 12
+
+
+4 HIJO std_out=1 y std_in=0
+ pid=39062
+rPipe= 15 16 wPipe= 4 14
+
+
+5 HIJO std_out=1 y std_in=0
+ pid=39063
+rPipe= 17 18 wPipe= 4 16
+
+
+6 HIJO std_out=1 y std_in=0
+ pid=39064
+rPipe= 19 20 wPipe= 4 18
+
+
+7 HIJO std_out=1 y std_in=0
+ pid=39065
+rPipe= 21 22 wPipe= 4 20
+
+
+8 HIJO std_out=1 y std_in=0
+ pid=39066
+rPipe= 23 24 wPipe= 4 22
+
+
+9 HIJO std_out=1 y std_in=0
+ pid=39067
+rPipe= 25 26 wPipe= 4 24
+
+
+10 HIJO std_out=1 y std_in=0
+ pid=39068
+rPipe= 27 28 wPipe= 4 26
+
+
+11 HIJO std_out=1 y std_in=0
+ pid=39069
+rPipe= 29 30 wPipe= 4 28
+
+
+12 HIJO std_out=1 y std_in=0
+ pid=39070
+rPipe= 31 32 wPipe= 4 30
+
+
+13 HIJO std_out=1 y std_in=0
+ pid=39071
+rPipe= 33 34 wPipe= 4 32
+
+
+14 HIJO std_out=1 y std_in=0
+ pid=39072
+rPipe= 35 36 wPipe= 4 34
+
+
+15 HIJO std_out=1 y std_in=0
+ pid=39073
+rPipe= 37 38 wPipe= 4 36
+
+
+16 HIJO std_out=1 y std_in=0
+ pid=39074
+rPipe= 39 40 wPipe= 4 38
+
+
+17 HIJO std_out=1 y std_in=0
+ pid=39075
+rPipe= 41 42 wPipe= 4 40
+
+
+18 HIJO std_out=1 y std_in=0
+ pid=39076
+rPipe= 43 44 wPipe= 4 42
+
+
+19 HIJO std_out=1 y std_in=0
+ pid=39077
+rPipe= 45 46 wPipe= 4 44
+
+

@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include <sys/wait.h>
 
-#define MSGSIZE 64
+#define MSGSIZE 128
 #define DEF_SIZE 512
 
 
@@ -72,7 +72,7 @@ int main(){
 
 	char* msg1 = "Hola Mundo";
 
-	while(k <10){
+	while(k <20){
 
 		int pipe1[2];
 		int pipe2[2];
@@ -91,16 +91,20 @@ int main(){
 			close(pipe1[1]);
 			close(pipe2[0]);
 			
-			if( (dup2(pipe1[0], STDIN_FILENO)) == -1){
+			if( (dup2(pipe1[0], fileno(stdin))) == -1){
 				printf("Error en dup2\n");
 				exit(1);
 			}
 			
-			if(dup2(pipe2[1], STDOUT_FILENO) == -1){
+			if(dup2(pipe2[1], fileno(stdout)) == -1){
 				printf("Error en dup2\n");
 				exit(1);
 			}
-			write(pipe2[1], msg1 ,MSGSIZE);
+
+			//Se printea en el Standard Out. En este caso STDOUT deberia ser igual al contenido de pipe2[1].
+			printf("%d HIJO std_out=%d y std_in=%d\n",k, fileno(stdout), fileno(stdin));
+
+			//read(STDIN_FILENO, inbuff, MSGSIZE);
 			exit(1);
 		}
 		else if(pid != 0){
@@ -117,15 +121,9 @@ int main(){
 				exit(1);
 			}
 
-			pid_t cpid = waitpid(pid, &stat, 0);
 
-			FILE* fp = fopen("new4.txt", "a");
-			
-			read(pipe2[0], inbuff, MSGSIZE);
-			fprintf(fp, "%d\t%s\t pid=%d\n", k,inbuff, pid);
-
-			fclose(fp);
-
+			//printf();
+			//pid_t cpid = waitpid(pid, &stat, 0);
 
 			hijo* child = crearHijo();
 			child = saveChild(child, pipe2, pipe1, pid);
@@ -140,6 +138,25 @@ int main(){
 		k++;
 	}
 
+	FILE* fp = fopen("salida.txt", "w");
+
+	hijo* aux=firstChild;
+
+	while(aux!= NULL){
+
+		if(dup2(aux->rPipe[0], STDIN_FILENO) == -1){
+				printf("Error en dup2\n");
+				exit(1);
+		};
+
+		pid_t cpid= waitpid(aux->pid, &stat, 0);
+
+		read(STDIN_FILENO, inbuff	, MSGSIZE);
+		fprintf(fp, "%s pid=%d\nrPipe= %d %d wPipe= %d %d\n\n\n", inbuff, aux->pid, aux->rPipe[0], aux->rPipe[1],aux->wPipe[0], aux->wPipe[1]);
+		aux=aux->sig;
+	}
+
+	fclose(fp);
 
 	return 0;
 }
