@@ -70,7 +70,7 @@ int main(){
 	int k=0;
 
 
-	char* msg1 = "Mensaje determinado";
+	char* msg1 = "Hola Mundo";
 
 	while(k <10){
 
