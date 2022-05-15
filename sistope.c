@@ -5,8 +5,8 @@
 #include <getopt.h>
 #include <math.h>
 
-#define DEF_LENGTH 50
-#define DEF_WORD_SIZE 100
+#define DEF_LENGTH 256
+#define DEF_WORD_SIZE 50
 
 
 typedef struct hijo{
@@ -134,7 +134,11 @@ int main(int argc, char** argv){
         int pipe2[2];
 
 
-        if( pipe(pipe1)== -1 && pipe(pipe2) == -1){
+        if( pipe(pipe1)== -1){
+            printf("Error al crear el Pipe\n");
+            exit(1);
+        }
+        if(pipe(pipe2) == -1){
             printf("Error al crear el Pipe\n");
             exit(1);
         }
@@ -179,6 +183,14 @@ int main(int argc, char** argv){
         k++;
     }
 
+    /*
+    child = firstChild;
+    while(child != NULL){
+        printf("rPadre=%d lHijo=%d lPadre=%d rHijo=%d\n", child->rPipe[0],child->rPipe[1],child->wPipe[1], child->wPipe[0]);
+        child=child->sig;
+    }
+    */
+
     fp = fopen(in_fileName, "r");
 
     if(fp == NULL){
@@ -188,54 +200,85 @@ int main(int argc, char** argv){
     if(pid !=0 ){
 
         int id;
+        int c=0;
 
         double eje_u, eje_v, valor_real, valor_imaginario, ruido;
-        while (fscanf(fp, "%lf,%lf,%lf,%lf,%lf", &eje_u, &eje_v, &valor_real, &valor_imaginario, &ruido) != -1){
+        while (fscanf(fp, "%lf,%lf,%lf,%lf,%lf", &eje_u, &eje_v, &valor_real, &valor_imaginario, &ruido) > 0){
+            
+            printf("entrando a %d\n", c);
             id=(int) calcularDistancia(eje_u, eje_v)/ancho_disco;
             child= getChildFromId(firstChild, id);
 
+            printf("paso\n");
             if(dup2(child->rPipe[0], STDIN_FILENO) == -1){
                 printf("Error en dup2\n");
                 exit(1);
-            };
-            if( (dup2(child->wPipe[1], STDOUT_FILENO)) == -1){
+            }
+            if(dup2(child->wPipe[1], STDOUT_FILENO) == -1){
                 printf("Error en dup2\n");
                 exit(1);
             }
 
             printf("%f %f %f\n", valor_real, valor_imaginario, ruido);
             
-            /*
             if(dup2(saved_stdout, STDOUT_FILENO) == -1){
                 exit(1);
             }
 
-            printf("Se escribio en el hijo%f %f %f\n", valor_real, valor_imaginario, ruido);
-            */    
+            printf("%d Se escribio en el hijo %d: %f %f %f\n",c, id,valor_real, valor_imaginario, ruido);
+            c++;
+        
+
         }
+        printf("Se termino de leer visibilidades\n");
+        child= firstChild;
+        while(child != NULL){
+            if(dup2(child->wPipe[1], STDOUT_FILENO) == -1){
+                printf("Error en dup2\n");
+            }
+            printf("-1\n");
+        }
+
 
     }
     else{ // Es hijo
 
-        char* inbuff = (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
+        int c=0;
 
-        float valor_real, valor_imaginario, ruido;
-        read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
-        //fscanf(STDIN_FILENO, "%f %f %f", &valor_real, &valor_imaginario, &ruido);
+        while(1){
+            /*
+            char* inbuff = (char*) malloc(sizeof(char)*50);
+            float valor_real, valor_imaginario, ruido;
+            read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
+           
+            //fscanf(STDIN_FILENO, "%f %f %f\n", &valor_real, &valor_imaginario, &ruido);
 
-        if(dup2(saved_stdout, STDOUT_FILENO) == -1){
-            exit(1);
+            //fflush(STDIN_FILENO);
+
+            /*
+            if(atoi(inbuff) == -1){
+                break;
+            }
+            */
+           break;
+           /*
+            if(dup2(saved_stdout, STDOUT_FILENO) == -1){
+                exit(1);
+            }
+            printf("c=%d Valores recibidos: %s\n",c, inbuff);
+            
+            FILE* aux = fopen("hijos.txt", "a");
+
+            fprintf(aux, "%s\n", inbuff);
+            
+            fclose(aux);
+            free(inbuff);
+            c++;
+            if (c == 5){
+                exit(1);
+            }
+            */
         }
-
-        printf("Valores recibidos: %s\n", inbuff);
-
-
-        FILE* aux = fopen("hijos.txt", "a");
-
-        fprintf(aux, "%f %f %f\n", valor_real, valor_imaginario, ruido);
-        
-        fclose(aux);
-        //exit(1);
     }
 
     fclose(fp);
