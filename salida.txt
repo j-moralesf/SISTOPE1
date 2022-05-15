@@ -1,100 +1,20 @@
-0 HIJO std_out=1 y std_in=0
- pid=39058
-rPipe= 7 8 wPipe= 4 5
-
-
-1 HIJO std_out=1 y std_in=0
- pid=39059
-rPipe= 9 10 wPipe= 4 8
-
-
-2 HIJO std_out=1 y std_in=0
- pid=39060
-rPipe= 11 12 wPipe= 4 10
-
-
-3 HIJO std_out=1 y std_in=0
- pid=39061
-rPipe= 13 14 wPipe= 4 12
-
-
-4 HIJO std_out=1 y std_in=0
- pid=39062
-rPipe= 15 16 wPipe= 4 14
-
-
-5 HIJO std_out=1 y std_in=0
- pid=39063
-rPipe= 17 18 wPipe= 4 16
-
-
-6 HIJO std_out=1 y std_in=0
- pid=39064
-rPipe= 19 20 wPipe= 4 18
-
-
-7 HIJO std_out=1 y std_in=0
- pid=39065
-rPipe= 21 22 wPipe= 4 20
-
-
-8 HIJO std_out=1 y std_in=0
- pid=39066
-rPipe= 23 24 wPipe= 4 22
-
-
-9 HIJO std_out=1 y std_in=0
- pid=39067
-rPipe= 25 26 wPipe= 4 24
-
-
-10 HIJO std_out=1 y std_in=0
- pid=39068
-rPipe= 27 28 wPipe= 4 26
-
-
-11 HIJO std_out=1 y std_in=0
- pid=39069
-rPipe= 29 30 wPipe= 4 28
-
-
-12 HIJO std_out=1 y std_in=0
- pid=39070
-rPipe= 31 32 wPipe= 4 30
-
-
-13 HIJO std_out=1 y std_in=0
- pid=39071
-rPipe= 33 34 wPipe= 4 32
-
-
-14 HIJO std_out=1 y std_in=0
- pid=39072
-rPipe= 35 36 wPipe= 4 34
-
-
-15 HIJO std_out=1 y std_in=0
- pid=39073
-rPipe= 37 38 wPipe= 4 36
-
-
-16 HIJO std_out=1 y std_in=0
- pid=39074
-rPipe= 39 40 wPipe= 4 38
-
-
-17 HIJO std_out=1 y std_in=0
- pid=39075
-rPipe= 41 42 wPipe= 4 40
-
-
-18 HIJO std_out=1 y std_in=0
- pid=39076
-rPipe= 43 44 wPipe= 4 42
-
-
-19 HIJO std_out=1 y std_in=0
- pid=39077
-rPipe= 45 46 wPipe= 4 44
-
-
+0 HIJO std_out=8 y std_in=4	PADRE std_out=5 y std_in=7 pid=179428
+1 HIJO std_out=12 y std_in=9	PADRE std_out=10 y std_in=11µð pid=179429
+2 HIJO std_out=16 y std_in=13	PADRE std_out=14 y std_in=15ð pid=179430
+3 HIJO std_out=20 y std_in=17	PADRE std_out=18 y std_in=19ð pid=179431
+4 HIJO std_out=24 y std_in=21	PADRE std_out=22 y std_in=23ð pid=179432
+5 HIJO std_out=28 y std_in=25	PADRE std_out=26 y std_in=27ð pid=179433
+6 HIJO std_out=32 y std_in=29	PADRE std_out=30 y std_in=31ð pid=179434
+7 HIJO std_out=36 y std_in=33	PADRE std_out=34 y std_in=35ð pid=179435
+8 HIJO std_out=40 y std_in=37	PADRE std_out=38 y std_in=39ð pid=179436
+9 HIJO std_out=44 y std_in=41	PADRE std_out=42 y std_in=43ð pid=179437
+10 HIJO std_out=48 y std_in=45	PADRE std_out=46 y std_in=47 pid=179438
+11 HIJO std_out=52 y std_in=49	PADRE std_out=50 y std_in=51 pid=179439
+12 HIJO std_out=56 y std_in=53	PADRE std_out=54 y std_in=55 pid=179440
+13 HIJO std_out=60 y std_in=57	PADRE std_out=58 y std_in=59 pid=179441
+14 HIJO std_out=64 y std_in=61	PADRE std_out=62 y std_in=63 pid=179442
+15 HIJO std_out=68 y std_in=65	PADRE std_out=66 y std_in=67 pid=179443
+16 HIJO std_out=72 y std_in=69	PADRE std_out=70 y std_in=71 pid=179444
+17 HIJO std_out=76 y std_in=73	PADRE std_out=74 y std_in=75 pid=179445
+18 HIJO std_out=80 y std_in=77	PADRE std_out=78 y std_in=79 pid=179446
+19 HIJO std_out=84 y std_in=81	PADRE std_out=82 y std_in=83 pid=179447

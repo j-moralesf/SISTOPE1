@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <math.h>
 
 #define DEF_LENGTH 50
 #define DEF_WORD_SIZE 100
@@ -13,150 +14,103 @@ typedef struct hijo{
     int wPipe[2]; //Pipe donde el hijo escribe (w) y el padre lee.
     int rPipe[2]; //Pipe donde el hijo lee (r) y el padre escribe.
     int pid;      //Pid del proceso.
-    hijo* sig;
+    int indice;
+    struct hijo* sig;
 }hijo;
 
 
-void addChild(hijo** childArray, hijo* child){
+hijo* crearHijo(){
 
-    hijo* childArray;
-    hijo* aux;
+    hijo* newHijo= (hijo*) malloc(sizeof(hijo));
+    newHijo->sig= NULL;
+
+    return newHijo;
+}
+
+hijo* saveChild(hijo* child, int rBuff[2], int wBuff[2], int pid, int id){
+
+    child->wPipe[0] = wBuff[0];
+    child->wPipe[1] = wBuff[1];
+    child->rPipe[0] = rBuff[0];
+    child->rPipe[1] = rBuff[1];
+    child->indice = id;
+
+    return child;
+}
+
+
+hijo* agregarHijo(hijo* firstChild, hijo* child){
+
+    hijo* aux = firstChild;
+
+    if(firstChild == NULL){
+        return child;
+    }
 
     while( aux->sig != NULL){
-        aux= aux->sig;
+        aux = aux ->sig;
     }
+
     aux->sig = child;
+
+    return firstChild;
 }
 
-void comunicarProcesos(hijo** childArray){
-    
-    hijo newHijo;
-
-    if (pipe(newHijo.wPipe) == -1){
-        printf("No se pudo crear el pipe\n");
-        exit(-1);
-    }
-
-    if(newHijo.pid = fork() == -1){
-        printf("No se pudo crear el hijo\n");
-        exit(-1);
-    }
-    if (newHijo.pid == 0){
-
-        close(newHijo.wPipe[0]); //Cierra el lado de lectura
-        close(newHijo.rPipe[1]); //Cierra el lado de escritura
-
-        if(dup2(newHijo.wPipe[1], STDOUT_FILENO) == -1){
-            printf("Error en dup2\n");
-            exit(-1);
-        }
-        if(dup2(newHijo.rPipe[0], STDIN_FILENO) == -1){
-            printf("Error en dup2\n");
-            exit(-1);
-        }
-        execlp("ls", "ls", NULL);
-    }
-    else{
-        close(newHijo.rPipe[0]); //Cierra el lado de lectura
-        close(newHijo.wPipe[1]); //Cierra el lado de escritura
-
-        if(dup2(newHijo.wPipe[0], STDIN_FILENO) == -1){
-            printf("Error en dup2\n");
-            exit(-1);
-        }
-        if(dup2(newHijo.rPipe[1], STDOUT_FILENO) == -1){
-            printf("Error en dup2\n");
-            exit(-1);
-        }
-        execlp("wc", "wc" , "-cwl", NULL);
-    }
-    addChild(childArray, *newHijo);
+float calcularDistancia(float x, float y){
+    return sqrt(x*x+y*y);
 }
 
+hijo* getChildFromId(hijo* lista, int id){
 
-char** initializeBuffer(int n){
+    hijo* aux = lista;
 
-    char** newBuffer = (char**) (malloc(sizeof(char*)*n));
-    
-    for(int i=0; i < n; i++){
-        newBuffer[i]=(char*) (malloc(sizeof(char)*DEF_WORD_SIZE));
+    while(aux!=NULL){
+        if(aux->indice == id){
+            return aux;
+        }
+        else{
+            aux=aux->sig;
+        }
     }
-
-    return newBuffer;
-}
-
-void rellenarBuffer(char** buffer, int n){
-    for(int i=0; i < n ; i++){
-        buffer[i]= "linea numero ";
-    }
+    return NULL;
 }
 
 
 int main(int argc, char** argv){
 
-    int opt=0;
-    FILE* fp;
+    int opt=0, flag =0;
+    char* in_fileName= (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
+    char* out_fileName= (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
     char linea[100];
     int c_linea, n_discos, ancho_disco;
-
-    char** buffer = initializeBuffer(DEF_LENGTH);
-    rellenarBuffer(buffer, DEF_LENGTH);
+    FILE* fp;
+    int saved_stdout=dup(1);
 
     //Se leen los parametros de entrada
 
     while((opt= getopt(argc, argv, "i:o:n:d:b"))){
         switch(opt){
-            
             //Parametro leer archivo de visibilidades
             case 'i':
-                fp= fopen(optarg, "r");
-
-                if( fp == NULL){
-                    printf("No se encuentra el archivo especificado.\n");
-                    opt = -1;
-                }
-                  else{
-                    printf("Abriendo el archivo especificado ...\n");
-                }
-                while(fscanf(fp, "%s", linea)!=EOF){
-                   printf("%s\n", linea);
-                }
-                fclose(fp);
-                break;
-
+                in_fileName = optarg;
+                printf("%s\n", in_fileName);
             //Parametro de creacion de archivo de salida
             case 'o':
 
-                fp= fopen(optarg, "w");
+                out_fileName= optarg;
 
-                if( fp == NULL){
-                    printf("Error en la creacion del archivo.\n");
-                    opt = -1;
-                }
-                  else{
-                    printf("Creando el archivo especificado ...\n");
-                }
-
-                c_linea =0;
-                while(c_linea < DEF_LENGTH){
-                    fprintf(fp, "%s %d\n", buffer[c_linea], c_linea+1);
-                    c_linea++;
-                }
-                fclose(fp);
                 break;
             //Lectura de cantidad de discos
             case 'n':
                 n_discos = atoi(optarg);
-                printf("Cantidad de discos ingresada : %d\n", n_discos);
                 break;
             //Lectura ancho de cada disci
             case 'd':
                 ancho_disco = atoi(optarg);
-                printf("Ancho de cada disco ingresada : %d\n", ancho_disco);
                 break;
             //Flag
             case 'b':
-                printf("Flag activada.\n");
+                flag = 1;
                 break;
         }
         if(opt == -1){
@@ -164,8 +118,128 @@ int main(int argc, char** argv){
             break;
         }
     }
-    
     //Crear hijos y pipes de comunicacion con ellos
+
+    hijo* firstChild = NULL;
+
+    pid_t pid;
+    int stat, k=0;
+    hijo* child;
+
+    while(k <n_discos){
+
+        printf("k=%d\n", k);
+
+        int pipe1[2];
+        int pipe2[2];
+
+
+        if( pipe(pipe1)== -1 && pipe(pipe2) == -1){
+            printf("Error al crear el Pipe\n");
+            exit(1);
+        }
+
+        if((pid= fork()) == -1){
+            printf("error. Terminando programa\n");
+            exit(1);
+        }
+
+        //HIJO
+        if(pid == 0){
+            close(pipe1[1]);  //[1] -> Escritura
+            close(pipe2[0]); // [0] -> Lectura
+            
+            if( (dup2(pipe1[0], STDIN_FILENO)) == -1){
+                printf("Error en dup2\n");
+                exit(1);
+            }
+            
+            if(dup2(pipe2[1], STDOUT_FILENO) == -1){
+                printf("Error en dup2\n");
+                exit(1);
+            }
+
+            break;
+        }
+    
+        //PADRE
+        else if(pid != 0){
+            //El padre escribe por pipe1[0] y lee por pipe2[1]
+
+            child = crearHijo();
+            child = saveChild(child, pipe2, pipe1, pid, k);
+
+            if(firstChild == NULL){
+                firstChild = child;
+            }
+            else{
+                firstChild=agregarHijo(firstChild, child);
+            }
+        }
+        k++;
+    }
+
+    fp = fopen(in_fileName, "r");
+
+    if(fp == NULL){
+        printf("Error al abrir el archivo de visibilidades. Por favor, volver a iniciar con la opcion '-i nombre_archivo.csv '\n");
+    }
+
+    if(pid !=0 ){
+
+        int id;
+
+        double eje_u, eje_v, valor_real, valor_imaginario, ruido;
+        while (fscanf(fp, "%lf,%lf,%lf,%lf,%lf", &eje_u, &eje_v, &valor_real, &valor_imaginario, &ruido) != -1){
+            id=(int) calcularDistancia(eje_u, eje_v)/ancho_disco;
+            child= getChildFromId(firstChild, id);
+
+            if(dup2(child->rPipe[0], STDIN_FILENO) == -1){
+                printf("Error en dup2\n");
+                exit(1);
+            };
+            if( (dup2(child->wPipe[1], STDOUT_FILENO)) == -1){
+                printf("Error en dup2\n");
+                exit(1);
+            }
+
+            printf("%f %f %f\n", valor_real, valor_imaginario, ruido);
+            
+            /*
+            if(dup2(saved_stdout, STDOUT_FILENO) == -1){
+                exit(1);
+            }
+
+            printf("Se escribio en el hijo%f %f %f\n", valor_real, valor_imaginario, ruido);
+            */    
+        }
+
+    }
+    else{ // Es hijo
+
+        char* inbuff = (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
+
+        float valor_real, valor_imaginario, ruido;
+        read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
+        //fscanf(STDIN_FILENO, "%f %f %f", &valor_real, &valor_imaginario, &ruido);
+
+        if(dup2(saved_stdout, STDOUT_FILENO) == -1){
+            exit(1);
+        }
+
+        printf("Valores recibidos: %s\n", inbuff);
+
+
+        FILE* aux = fopen("hijos.txt", "a");
+
+        fprintf(aux, "%f %f %f\n", valor_real, valor_imaginario, ruido);
+        
+        fclose(aux);
+        //exit(1);
+    }
+
+    fclose(fp);
+
 
     return 0;
 }
