@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 
 #define DEF_LENGTH_SIZE 512
-#define DEF_WORD_SIZE 1024
+#define DEF_WORD_SIZE 20480
 
 void takeValues(char* str, double* a, double* b, double* z){
     
@@ -270,14 +270,6 @@ int main(int argc, char** argv){
         k++;
     }
 
-    /*
-    child = firstChild;
-    while(child != NULL){
-        printf("rPadre=%d lHijo=%d lPadre=%d rHijo=%d\n", child->rPipe[0],child->rPipe[1],child->wPipe[1], child->wPipe[0]);
-        child=child->sig;
-    }
-    */
-
     fp = fopen(in_fileName, "r");
 
     if(fp == NULL){
@@ -294,6 +286,7 @@ int main(int argc, char** argv){
 
         while (fscanf(fp, "%lf,%lf,%lf,%lf,%lf", &eje_u, &eje_v, &valor_real, &valor_imaginario, &ruido) > 0){
             
+            double radio = calcularDistancia(eje_u, eje_v);
             id=(int) calcularDistancia(eje_u, eje_v)/ancho_disco;
 
             if(id >= n_discos){
@@ -317,109 +310,58 @@ int main(int argc, char** argv){
                 exit(1);
             }
 
-            printf("%d Se escribio en el hijo %d: %f %f %f\n",c, id,valor_real, valor_imaginario, ruido);
+            printf("%d Se escribio en el hijo %d: %f %f %f %f\n",c, id, radio,valor_real, valor_imaginario, ruido);
             c++;
         
 
         }
         printf("Se termino de leer visibilidades\n");
+
         child= firstChild;
         while(child != NULL){
             if(dup2(child->wPipe[1], STDOUT_FILENO) == -1){
                 printf("Error en dup2\n");
             }
             printf("FINALIZAR\n");
-            //waitpid(child->pid,&stat,0);
+            waitpid(child->pid,&stat,0);
             child = child->sig;
         }
 
+        if(dup2(saved_stdout, STDOUT_FILENO) == -1){
+            exit(1);
+        }
+
+        FILE* fsalida = fopen("salida.txt", "w");
+
+        char* buffer = (char*) malloc(sizeof(char)*100);
+
+        child= firstChild;
+        while(child != NULL){
+            if(dup2(child->rPipe[0], STDIN_FILENO) == -1){
+                printf("Error en dup2\n");
+            }
+            read(STDIN_FILENO,buffer,sizeof(char)*100);
+            fprintf(fsalida,"Disco %d:\n%s\n", child->indice + 1, buffer);
+            child = child->sig;
+        }
+
+        fclose(fsalida);
+        free(buffer);
 
     }
     else{ // Es hijo
 
-        /*
+        // EXECVE
 
-        int c=0;
-
-        //printf("Soy el hijo: %d\n", getpid());
-        
-
-        while(1){
-
-            // Se define un buffer y variables con las que se calculan los resultados
-            
-            char* inbuff = (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
-
-            double valor_real, valor_imaginario, ruido;
-
-            // Lee pipe
-
-            read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
-            fflush(STDIN_FILENO);
+        if (execl("vis","vis",NULL) == -1){
 
             FILE* aux = fopen("hijos.txt", "a");
-            
-            int k = 0;
-            int flag = 0;
 
-            //fprintf(aux, "PID: %d Original inbuff:\n%s*\n", getpid(), inbuff);
+            fprintf(aux, "Error\n");
 
-
-
-            while(inbuff[0] != '\0'){
-
-                char* auxS = separarPorLinea(inbuff);
-
-                if(auxS == NULL){
-                    //fprintf(aux, "Error NULL\n");
-                    exit(1);
-                }
-
-                // Si llega la senal de fin del padre
-                if(strcmp(auxS,"FINALIZAR")==0){
-                    //fprintf(aux, "lectura fin\n");
-                    flag = 1;
-                    break;
-                }
-
-                //fprintf(aux, "auxS: %s*\n", auxS);
-
-                inbuff = fixString(inbuff);
-                //fprintf(aux, "PID: %d FixString inbuff:\n%s*\n", getpid(), inbuff);
-
-                k++;
-                
-                takeValues(auxS, &valor_real, &valor_imaginario, &ruido);
-                
-                fprintf(aux,"%d Floats: %lf %lf %lf\n", getpid(), valor_real, valor_imaginario, ruido);
-                
-                free(auxS);
-            }
-
-            memset(inbuff, 0, DEF_WORD_SIZE);
-
-            free(inbuff);
-
-
-            // Si el padre manda la senal de fin
-            if(flag==1){
-
-                fprintf(aux, "FIN DEL %d\n", getpid());
-
-                // Se calculan los valores finales del disco
-
-               // double media_real, media_im, pot, ruido;
-
-
-                break;
-            }
-            
             fclose(aux);
-            c++;
-        }
-        */
 
-        // EXECVE
+        }
 
     }
 

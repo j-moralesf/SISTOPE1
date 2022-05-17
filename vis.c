@@ -14,7 +14,7 @@
 #include <string.h>
 #include <math.h>
 
-#define DEF_WORD_SIZE 1024
+#define DEF_WORD_SIZE 20480
 
 void takeValues(char* str, double* a, double* b, double* z){
     
@@ -114,12 +114,15 @@ void calcularMedias(int n, double suma_real, double suma_im, double* media_real,
 int main()
 {
 	int n = 0;
-	double suma_real, suma_im, suma_pot, suma_ruido;
-	double media_real, media_im, pot, ruido;
+	double suma_real = 0, suma_im = 0, suma_pot = 0, suma_ruido = 0;
+	double media_real, media_im;
 
     int c=0;
 
     while(1){
+
+        FILE* aux = fopen("hijos.txt", "a");
+        fprintf(aux, "PID %d\n", getpid());
 
         // Se define un buffer y variables con las que se calculan los resultados
         
@@ -131,46 +134,40 @@ int main()
 
         read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
         fflush(STDIN_FILENO);
-     
-        FILE* aux = fopen("resultadoVis.txt", "a");
+
+        fprintf(aux, "1 *%s*\n",inbuff);
         
         int k = 0;
         int flag = 0;
-
-        //fprintf(aux, "PID: %d Original inbuff:\n%s*\n", getpid(), inbuff);
 
         while(inbuff[0] != '\0'){
 
             char* auxS = separarPorLinea(inbuff);
 
             if(auxS == NULL){
-                //fprintf(aux, "Error NULL\n");
                 exit(1);
             }
 
             // Si llega la senal de fin del padre
             if(strcmp(auxS,"FINALIZAR")==0 || strcmp(auxS,"FINALIZAR;")==0){
-                //fprintf(aux, "lectura fin\n");
                 free(auxS);
+                fprintf(aux, "senal ");
                 flag = 1;
                 break;
             }
 
-            fprintf(aux, "auxS: %s*\n", auxS);
-
             inbuff = fixString(inbuff);
-            //fprintf(aux, "PID: %d FixString inbuff:\n%s*\n", getpid(), inbuff);
 
             k++;
             
             takeValues(auxS, &valor_real, &valor_imaginario, &ruido);
-            
-            fprintf(aux,"%d Floats: %lf %lf %lf\n", getpid(), valor_real, valor_imaginario, ruido);
 
             sumarResultados(&n, valor_real, valor_imaginario, ruido, &suma_real, &suma_im, &suma_pot, &suma_ruido);
             
             free(auxS);
         }
+
+        fprintf(aux, "2 ");
 
         memset(inbuff, 0, DEF_WORD_SIZE);
 
@@ -180,8 +177,6 @@ int main()
         // Si el padre manda la senal de fin
         if(flag==1){
 
-            fprintf(aux, "FIN DEL %d\n", getpid());
-
             // Se calculan los valores finales del disco
 
             calcularMedias(n, suma_real, suma_im, &media_real, &media_im);
@@ -189,13 +184,17 @@ int main()
             // Se envian los resultados al pipe
             
             //fprintf(aux, "*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
+            printf("*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
 
-            printf("*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
+            fprintf(aux,"*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
 
             break;
         }
-        
+
+        fprintf(aux, "3 ");
+
         fclose(aux);
+        
         c++;
     }
 
