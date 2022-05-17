@@ -16,6 +16,9 @@
 
 #define DEF_WORD_SIZE 20480
 
+// Entradas: Un string de formato "num,num,num;"; 3 punteros de tipo double
+// Salidas: No retorna nada. Modifica los datos de los punteros ingresados, almacenando los numeros que se obitenen del string
+// Descripcion: Obtiene 3 valores tipo double de un string
 void takeValues(char* str, double* a, double* b, double* z){
     
     int c=0;
@@ -51,6 +54,9 @@ void takeValues(char* str, double* a, double* b, double* z){
     
 }
 
+// Entradas: Un string con saltos de linea
+// Salidas: La primera linea del string
+// Descripcion: Toma un string y retorna la primera linea de este
 char* separarPorLinea(char* str){
     
     int c =0;
@@ -72,6 +78,9 @@ char* separarPorLinea(char* str){
     return NULL;
 }
 
+// Entradas: Un string con saltos de linea
+// Salidas: El string sin la primera linea
+// Descripcion: Le quita la primera linea a un string
 char* fixString(char* str){
     int c =0;
     while(str[c] != '\0' || str[c] != '\n'){
@@ -93,11 +102,17 @@ char* fixString(char* str){
     return NULL;
 }
 
+// Entradas: (double, double) Parte real e imaginaria de una visibilidad
+// Salidas: (double) Valor de potencia para los valores ingresados
+// Descripcion: Calcula la propiedad de potencia
 double potencia(double u, double v){
 	double res = (u*u) + (v*v);
 	return sqrt(res);
 }
 
+// Entradas: Numero n de visibilidades leidas; valor real, imaginario y ruido leidos; Punteros a los acumuladores de las sumas de valores reales, valores imaginarios, potencia y ruido
+// Salidas: No tiene retorno (Se modifican los valores por referencia)
+// Descripcion: Esta funcion toma los valores leidos del pipe y los suma al total
 void sumarResultados(int* n, double valor_real, double valor_im, double valor_ruido, double* suma_real, double* suma_im, double* suma_pot, double* suma_ruido){
 	*suma_real = *suma_real + valor_real;
 	*suma_im = *suma_im + valor_im;
@@ -106,6 +121,9 @@ void sumarResultados(int* n, double valor_real, double valor_im, double valor_ru
 	*n = *n + 1;
 }
 
+// Entradas: Numero n de visibilidades; sumas de valores reales e imaginarios; 2 Punteros tipo double.
+// Salidas: No retorna nada. Modifica los valores almacenados en los punteros media_real y media_im.
+// Descripcion: Calcula las medias aritmeticas de suma_real y suma_im.
 void calcularMedias(int n, double suma_real, double suma_im, double* media_real, double* media_im){
 	*media_real = suma_real / n;
 	*media_im = suma_im / n;
@@ -121,8 +139,8 @@ int main()
 
     while(1){
 
-        FILE* aux = fopen("hijos.txt", "a");
-        fprintf(aux, "PID %d\n", getpid());
+//        FILE* aux = fopen("hijos.txt", "a");
+//        fprintf(aux, "PID %d\n", getpid());
 
         // Se define un buffer y variables con las que se calculan los resultados
         
@@ -130,15 +148,15 @@ int main()
 
         double valor_real, valor_imaginario, ruido;
 
-        // Lee pipe
+        // Lee pipe y lo almacena en un buffer
 
         read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
         fflush(STDIN_FILENO);
-
-        fprintf(aux, "1 *%s*\n",inbuff);
         
         int k = 0;
         int flag = 0;
+
+        // Obtiene los datos del buffer
 
         while(inbuff[0] != '\0'){
 
@@ -148,10 +166,9 @@ int main()
                 exit(1);
             }
 
-            // Si llega la senal de fin del padre
+            // Si llega la senal de fin se deja de leer el buffer
             if(strcmp(auxS,"FINALIZAR")==0 || strcmp(auxS,"FINALIZAR;")==0){
                 free(auxS);
-                fprintf(aux, "senal ");
                 flag = 1;
                 break;
             }
@@ -159,22 +176,21 @@ int main()
             inbuff = fixString(inbuff);
 
             k++;
+
+            // Se suman los valores de visisbilidades al total
             
             takeValues(auxS, &valor_real, &valor_imaginario, &ruido);
-
             sumarResultados(&n, valor_real, valor_imaginario, ruido, &suma_real, &suma_im, &suma_pot, &suma_ruido);
             
             free(auxS);
         }
-
-        fprintf(aux, "2 ");
 
         memset(inbuff, 0, DEF_WORD_SIZE);
 
         free(inbuff);
 
 
-        // Si el padre manda la senal de fin
+        // Si llega la senal de fin
         if(flag==1){
 
             // Se calculan los valores finales del disco
@@ -182,18 +198,16 @@ int main()
             calcularMedias(n, suma_real, suma_im, &media_real, &media_im);
 
             // Se envian los resultados al pipe
-            
-            //fprintf(aux, "*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
-            printf("*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
 
-            fprintf(aux,"*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
+            printf("Procese %d visibilidades\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
 
+//            fprintf(aux,"*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
+
+            // Se finaliza la lectura del pipe
             break;
         }
 
-        fprintf(aux, "3 ");
-
-        fclose(aux);
+//        fclose(aux);
         
         c++;
     }

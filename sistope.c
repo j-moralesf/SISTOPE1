@@ -9,94 +9,18 @@
 #define DEF_LENGTH_SIZE 512
 #define DEF_WORD_SIZE 20480
 
-void takeValues(char* str, double* a, double* b, double* z){
-    
-    int c=0;
-    int i=0;
-    int flag = 0;
-    char* num = (char*) malloc(sizeof(char)*15);
-    while(str[c] != '\0'){
-        if(str[c]== ',' || str[c] == ';'){
-            double n = atof(num);
-            if(flag == 0){
-                *a = n;
-            }
-            else if(flag == 1){
-                *b = n;
-            }
-            else if( flag == 2){
-                *z = n;
-                break;
-            }
-        
-            memset(num, 0, 15);
-            flag++;
-            i=0;
-            c++;
-        }
-        else{
-            num[i]= str[c];
-            i++;
-            c++;
-        }
-    }
-    free(num);
-    
-}
-
-char* separarPorLinea(char* str){
-    
-    int c =0;
-    
-    while(str[c] != '\0' || str[c] != '\n'){
-
-        if( str[c] == '\n'){
-            int i=0;
-            char* aux = (char*) malloc(sizeof(char)*(c+2));
-            while(i < c){
-                aux[i] = str[i];
-                i++;
-            }       
-            aux[i]= '\0';
-            return aux;
-        }
-        c++;
-    }
-    return NULL;
-}
-
-char* fixString(char* str){
-    int c =0;
-    while(str[c] != '\0' || str[c] != '\n'){
-        if( str[c] == '\n'){
-            int i=0;
-            char* aux = (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
-            c++;
-            while(str[c] != '\0'){
-                aux[i] = str[c];
-                i++;
-                c++;
-            }
-            aux[i]='\0';
-            return aux;
-        }
-        c++;
-    }
-    
-    return NULL;
-}
-
-
 typedef struct hijo{
 
     int wPipe[2]; //Pipe donde el hijo escribe (w) y el padre lee.
     int rPipe[2]; //Pipe donde el hijo lee (r) y el padre escribe.
     int pid;      //Pid del proceso.
-    int indice;
+    int indice;   //Disco al que pertenece el hijo
     struct hijo* sig;
 }hijo;
 
-
+// Entradas: No tiene.
+// Salidas: Hijo creado
+// Descripcion: Crea un nuevo hijo
 hijo* crearHijo(){
 
     hijo* newHijo= (hijo*) malloc(sizeof(hijo));
@@ -105,6 +29,9 @@ hijo* crearHijo(){
     return newHijo;
 }
 
+// Entradas: Puntero a un hijo; 4 valores de tipo int
+// Salidas: Puntero al hijo
+// Descripcion: Modifica los valores de los miembros de un hijo
 hijo* saveChild(hijo* child, int rBuff[2], int wBuff[2], int pid, int id){
 
     child->wPipe[0] = wBuff[0];
@@ -116,7 +43,9 @@ hijo* saveChild(hijo* child, int rBuff[2], int wBuff[2], int pid, int id){
     return child;
 }
 
-
+// Entradas: Lista enlazada de hijos; hijo a agregar
+// Salidas: Puntero al principio de la lista
+// Descripcion: Agrega un hijo al final de una lista enlazada de hijos
 hijo* agregarHijo(hijo* firstChild, hijo* child){
 
     hijo* aux = firstChild;
@@ -134,10 +63,16 @@ hijo* agregarHijo(hijo* firstChild, hijo* child){
     return firstChild;
 }
 
+// Entradas: Dos valores de tipo double
+// Salidas: double correspondiente al valor de distancia.
+// Descripcion: Calcula la distancia entre dos puntos
 double calcularDistancia(double x, double y){
     return sqrt(x*x+y*y);
 }
 
+// Entradas: Una lista enlazada de hijos; valor de indice
+// Salidas: Puntero a un hijo (hijo*)
+// Descripcion: Encuentra un hijo en una lista de hijos, a partir del id
 hijo* getChildFromId(hijo* lista, int id){
 
     hijo* aux = lista;
@@ -158,12 +93,11 @@ hijo* getChildFromId(hijo* lista, int id){
     return NULL;
 }
 
-
 int main(int argc, char** argv){
 
-    FILE* aux = fopen("hijos.txt", "w");
-    fprintf(aux,"pid=%d\n",getpid());
-    fclose(aux);
+//    FILE* aux = fopen("hijos.txt", "w");
+//    fprintf(aux,"pid=%d\n",getpid());
+//    fclose(aux);
 
     int opt=0, flag =0;
     char* in_fileName= (char*) malloc(sizeof(char)*DEF_LENGTH_SIZE);
@@ -173,29 +107,29 @@ int main(int argc, char** argv){
     FILE* fp;
     int saved_stdout=dup(1);
 
-    //Se leen los parametros de entrada
+    // Se leen los parametros de entrada
 
     while((opt= getopt(argc, argv, "i:o:n:d:b"))){
         switch(opt){
-            //Parametro leer archivo de visibilidades
+            // Parametro leer archivo de visibilidades
             case 'i':
                 in_fileName = optarg;
                 printf("%s\n", in_fileName);
-            //Parametro de creacion de archivo de salida
+            // Parametro de creacion de archivo de salida
             case 'o':
 
                 out_fileName= optarg;
 
                 break;
-            //Lectura de cantidad de discos
+            // Lectura de cantidad de discos
             case 'n':
                 n_discos = atoi(optarg);
                 break;
-            //Lectura ancho de cada disci
+            // Lectura ancho de cada disci
             case 'd':
                 ancho_disco = atoi(optarg);
                 break;
-            //Flag
+            // Flag
             case 'b':
                 flag = 1;
                 break;
@@ -205,7 +139,8 @@ int main(int argc, char** argv){
             break;
         }
     }
-    //Crear hijos y pipes de comunicacion con ellos
+
+    // Crear hijos y pipes de comunicacion con ellos
 
     hijo* firstChild = NULL;
 
@@ -235,7 +170,7 @@ int main(int argc, char** argv){
             exit(1);
         }
 
-        //HIJO
+        // HIJO
         if(pid == 0){
             close(pipe1[1]);  //[1] -> Escritura
             close(pipe2[0]); // [0] -> Lectura
@@ -253,7 +188,7 @@ int main(int argc, char** argv){
             break;
         }
     
-        //PADRE
+        // PADRE
         else if(pid != 0){
             //El padre escribe por pipe1[0] y lee por pipe2[1]
 
@@ -270,6 +205,8 @@ int main(int argc, char** argv){
         k++;
     }
 
+    // Se abre el archivo de visibilidades en modo lectura
+
     fp = fopen(in_fileName, "r");
 
     if(fp == NULL){
@@ -279,19 +216,24 @@ int main(int argc, char** argv){
     // PADRE
 
     if(pid !=0 ){
+
         int id;
         int c=0;
 
         double eje_u, eje_v, valor_real, valor_imaginario, ruido;
 
+        // El padre lee las visibilidades
+
         while (fscanf(fp, "%lf,%lf,%lf,%lf,%lf", &eje_u, &eje_v, &valor_real, &valor_imaginario, &ruido) > 0){
             
             double radio = calcularDistancia(eje_u, eje_v);
-            id=(int) calcularDistancia(eje_u, eje_v)/ancho_disco;
+            id = (int) calcularDistancia(eje_u, eje_v)/ancho_disco;
 
             if(id >= n_discos){
                 id = n_discos-1;
             }
+
+            // Se envia la informacion al hijo correspndiente segun la distancia calculada
 
             child= getChildFromId(firstChild, id);
 
@@ -310,12 +252,14 @@ int main(int argc, char** argv){
                 exit(1);
             }
 
-            printf("%d Se escribio en el hijo %d: %f %f %f %f\n",c, id, radio,valor_real, valor_imaginario, ruido);
+//            printf("%d Se escribio en el hijo %d: %f %f %f %f\n",c, id, radio,valor_real, valor_imaginario, ruido);
             c++;
         
 
         }
-        printf("Se termino de leer visibilidades\n");
+//        printf("Se termino de leer visibilidades\n");
+
+        // Cuando el padre termina de leer las visibilidades se envia un mensaje de FIN a los hijos
 
         child= firstChild;
         while(child != NULL){
@@ -327,20 +271,24 @@ int main(int argc, char** argv){
             child = child->sig;
         }
 
+        // Se reestablece el stdout
+
         if(dup2(saved_stdout, STDOUT_FILENO) == -1){
             exit(1);
         }
 
-        FILE* fsalida = fopen("salida.txt", "w");
+        // El padre lee cada pipe y se escribe el archivo de salida
 
-        char* buffer = (char*) malloc(sizeof(char)*100);
+        FILE* fsalida = fopen(out_fileName, "w");
+
+        char* buffer = (char*) malloc(sizeof(char)*200);
 
         child= firstChild;
         while(child != NULL){
             if(dup2(child->rPipe[0], STDIN_FILENO) == -1){
                 printf("Error en dup2\n");
             }
-            read(STDIN_FILENO,buffer,sizeof(char)*100);
+            read(STDIN_FILENO,buffer,sizeof(char)*200);
             fprintf(fsalida,"Disco %d:\n%s\n", child->indice + 1, buffer);
             child = child->sig;
         }
@@ -351,22 +299,18 @@ int main(int argc, char** argv){
     }
     else{ // Es hijo
 
-        // EXECVE
+        // Hijo realiza EXECVE para ejecutar el progrma vis
 
         if (execl("vis","vis",NULL) == -1){
 
-            FILE* aux = fopen("hijos.txt", "a");
-
-            fprintf(aux, "Error\n");
-
-            fclose(aux);
-
+//            FILE* aux = fopen("hijos.txt", "a");
+//            fprintf(aux, "Error\n");
+//            fclose(aux);
         }
 
     }
 
     fclose(fp);
-
 
     return 0;
 }
