@@ -4,9 +4,87 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <math.h>
+#include <sys/wait.h>
 
-#define DEF_LENGTH 256
-#define DEF_WORD_SIZE 50
+#define DEF_LENGTH_SIZE 512
+#define DEF_WORD_SIZE 1024
+
+void takeValues(char* str, double* a, double* b, double* z){
+    
+    int c=0;
+    int i=0;
+    int flag = 0;
+    char* num = (char*) malloc(sizeof(char)*15);
+    while(str[c] != '\0'){
+        if(str[c]== ',' || str[c] == ';'){
+            double n = atof(num);
+            if(flag == 0){
+                *a = n;
+            }
+            else if(flag == 1){
+                *b = n;
+            }
+            else if( flag == 2){
+                *z = n;
+                break;
+            }
+        
+            memset(num, 0, 15);
+            flag++;
+            i=0;
+            c++;
+        }
+        else{
+            num[i]= str[c];
+            i++;
+            c++;
+        }
+    }
+    free(num);
+    
+}
+
+char* separarPorLinea(char* str){
+    
+    int c =0;
+    
+    while(str[c] != '\0' || str[c] != '\n'){
+
+        if( str[c] == '\n'){
+            int i=0;
+            char* aux = (char*) malloc(sizeof(char)*(c+2));
+            while(i < c){
+                aux[i] = str[i];
+                i++;
+            }       
+            aux[i]= '\0';
+            return aux;
+        }
+        c++;
+    }
+    return NULL;
+}
+
+char* fixString(char* str){
+    int c =0;
+    while(str[c] != '\0' || str[c] != '\n'){
+        if( str[c] == '\n'){
+            int i=0;
+            char* aux = (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
+            c++;
+            while(str[c] != '\0'){
+                aux[i] = str[c];
+                i++;
+                c++;
+            }
+            aux[i]='\0';
+            return aux;
+        }
+        c++;
+    }
+    
+    return NULL;
+}
 
 
 typedef struct hijo{
@@ -56,7 +134,7 @@ hijo* agregarHijo(hijo* firstChild, hijo* child){
     return firstChild;
 }
 
-float calcularDistancia(float x, float y){
+double calcularDistancia(double x, double y){
     return sqrt(x*x+y*y);
 }
 
@@ -68,6 +146,11 @@ hijo* getChildFromId(hijo* lista, int id){
         if(aux->indice == id){
             return aux;
         }
+
+        if(aux->indice <= id && aux->sig == NULL){
+            return aux;
+        }
+
         else{
             aux=aux->sig;
         }
@@ -78,9 +161,13 @@ hijo* getChildFromId(hijo* lista, int id){
 
 int main(int argc, char** argv){
 
+    FILE* aux = fopen("hijos.txt", "w");
+    fprintf(aux,"pid=%d\n",getpid());
+    fclose(aux);
+
     int opt=0, flag =0;
-    char* in_fileName= (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
-    char* out_fileName= (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
+    char* in_fileName= (char*) malloc(sizeof(char)*DEF_LENGTH_SIZE);
+    char* out_fileName= (char*) malloc(sizeof(char)*DEF_LENGTH_SIZE);
     char linea[100];
     int c_linea, n_discos, ancho_disco;
     FILE* fp;
@@ -197,19 +284,24 @@ int main(int argc, char** argv){
         printf("Error al abrir el archivo de visibilidades. Por favor, volver a iniciar con la opcion '-i nombre_archivo.csv '\n");
     }
 
-    if(pid !=0 ){
+    // PADRE
 
+    if(pid !=0 ){
         int id;
         int c=0;
 
         double eje_u, eje_v, valor_real, valor_imaginario, ruido;
+
         while (fscanf(fp, "%lf,%lf,%lf,%lf,%lf", &eje_u, &eje_v, &valor_real, &valor_imaginario, &ruido) > 0){
             
-            printf("entrando a %d\n", c);
             id=(int) calcularDistancia(eje_u, eje_v)/ancho_disco;
+
+            if(id >= n_discos){
+                id = n_discos-1;
+            }
+
             child= getChildFromId(firstChild, id);
 
-            printf("paso\n");
             if(dup2(child->rPipe[0], STDIN_FILENO) == -1){
                 printf("Error en dup2\n");
                 exit(1);
@@ -219,7 +311,7 @@ int main(int argc, char** argv){
                 exit(1);
             }
 
-            printf("%f %f %f\n", valor_real, valor_imaginario, ruido);
+            printf("%f,%f,%f;\n", valor_real, valor_imaginario, ruido);
             
             if(dup2(saved_stdout, STDOUT_FILENO) == -1){
                 exit(1);
@@ -236,49 +328,99 @@ int main(int argc, char** argv){
             if(dup2(child->wPipe[1], STDOUT_FILENO) == -1){
                 printf("Error en dup2\n");
             }
-            printf("-1\n");
+            printf("FINALIZAR\n");
+            //waitpid(child->pid,&stat,0);
+            child = child->sig;
         }
 
 
     }
     else{ // Es hijo
 
+        /*
+
         int c=0;
 
+        //printf("Soy el hijo: %d\n", getpid());
+        
+
         while(1){
-            /*
-            char* inbuff = (char*) malloc(sizeof(char)*50);
-            float valor_real, valor_imaginario, ruido;
+
+            // Se define un buffer y variables con las que se calculan los resultados
+            
+            char* inbuff = (char*) malloc(sizeof(char)*DEF_WORD_SIZE);
+
+            double valor_real, valor_imaginario, ruido;
+
+            // Lee pipe
+
             read(STDIN_FILENO, inbuff, sizeof(char)*DEF_WORD_SIZE);
-           
-            //fscanf(STDIN_FILENO, "%f %f %f\n", &valor_real, &valor_imaginario, &ruido);
+            fflush(STDIN_FILENO);
 
-            //fflush(STDIN_FILENO);
+            FILE* aux = fopen("hijos.txt", "a");
+            
+            int k = 0;
+            int flag = 0;
 
-            /*
-            if(atoi(inbuff) == -1){
+            //fprintf(aux, "PID: %d Original inbuff:\n%s*\n", getpid(), inbuff);
+
+
+
+            while(inbuff[0] != '\0'){
+
+                char* auxS = separarPorLinea(inbuff);
+
+                if(auxS == NULL){
+                    //fprintf(aux, "Error NULL\n");
+                    exit(1);
+                }
+
+                // Si llega la senal de fin del padre
+                if(strcmp(auxS,"FINALIZAR")==0){
+                    //fprintf(aux, "lectura fin\n");
+                    flag = 1;
+                    break;
+                }
+
+                //fprintf(aux, "auxS: %s*\n", auxS);
+
+                inbuff = fixString(inbuff);
+                //fprintf(aux, "PID: %d FixString inbuff:\n%s*\n", getpid(), inbuff);
+
+                k++;
+                
+                takeValues(auxS, &valor_real, &valor_imaginario, &ruido);
+                
+                fprintf(aux,"%d Floats: %lf %lf %lf\n", getpid(), valor_real, valor_imaginario, ruido);
+                
+                free(auxS);
+            }
+
+            memset(inbuff, 0, DEF_WORD_SIZE);
+
+            free(inbuff);
+
+
+            // Si el padre manda la senal de fin
+            if(flag==1){
+
+                fprintf(aux, "FIN DEL %d\n", getpid());
+
+                // Se calculan los valores finales del disco
+
+               // double media_real, media_im, pot, ruido;
+
+
                 break;
             }
-            */
-           break;
-           /*
-            if(dup2(saved_stdout, STDOUT_FILENO) == -1){
-                exit(1);
-            }
-            printf("c=%d Valores recibidos: %s\n",c, inbuff);
-            
-            FILE* aux = fopen("hijos.txt", "a");
-
-            fprintf(aux, "%s\n", inbuff);
             
             fclose(aux);
-            free(inbuff);
             c++;
-            if (c == 5){
-                exit(1);
-            }
-            */
         }
+        */
+
+        // EXECVE
+
     }
 
     fclose(fp);
