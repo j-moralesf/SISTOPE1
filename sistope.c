@@ -15,6 +15,7 @@ typedef struct hijo{
     int rPipe[2]; //Pipe donde el hijo lee (r) y el padre escribe.
     int pid;      //Pid del proceso.
     int indice;   //Disco al que pertenece el hijo
+    int vis_count;// Numero de visibilidades revisadas por el hijo
     struct hijo* sig;
 }hijo;
 
@@ -29,16 +30,18 @@ hijo* crearHijo(){
     return newHijo;
 }
 
-// Entradas: Puntero a un hijo; 4 valores de tipo int
+// Entradas: Puntero a un hijo; 5 valores de tipo int
 // Salidas: Puntero al hijo
 // Descripcion: Modifica los valores de los miembros de un hijo
-hijo* saveChild(hijo* child, int rBuff[2], int wBuff[2], int pid, int id){
+hijo* saveChild(hijo* child, int rBuff[2], int wBuff[2], int pid, int id, int vis){
 
     child->wPipe[0] = wBuff[0];
     child->wPipe[1] = wBuff[1];
     child->rPipe[0] = rBuff[0];
     child->rPipe[1] = rBuff[1];
+    child->pid = pid;
     child->indice = id;
+    child->vis_count = vis;
 
     return child;
 }
@@ -95,11 +98,7 @@ hijo* getChildFromId(hijo* lista, int id){
 
 int main(int argc, char** argv){
 
-//    FILE* aux = fopen("hijos.txt", "w");
-//    fprintf(aux,"pid=%d\n",getpid());
-//    fclose(aux);
-
-    int opt=0, flag =0;
+    int opt=0, param=0, flag =0;
     char* in_fileName= (char*) malloc(sizeof(char)*DEF_LENGTH_SIZE);
     char* out_fileName= (char*) malloc(sizeof(char)*DEF_LENGTH_SIZE);
     char linea[100];
@@ -115,27 +114,34 @@ int main(int argc, char** argv){
             case 'i':
                 in_fileName = optarg;
                 printf("%s\n", in_fileName);
+                param++;
+                break;
             // Parametro de creacion de archivo de salida
             case 'o':
 
                 out_fileName= optarg;
-
+                param++;
                 break;
             // Lectura de cantidad de discos
             case 'n':
                 n_discos = atoi(optarg);
+                param++;
                 break;
             // Lectura ancho de cada disci
             case 'd':
                 ancho_disco = atoi(optarg);
+                param++;
                 break;
             // Flag
             case 'b':
                 flag = 1;
+                param++;
                 break;
         }
         if(opt == -1){
-            printf("No se entregaron parametros para la ejecucion del programa.\n");
+            if(param == 0){
+                printf("No se entregaron parametros para la ejecucion del programa.\n");
+            }
             break;
         }
     }
@@ -149,8 +155,6 @@ int main(int argc, char** argv){
     hijo* child;
 
     while(k <n_discos){
-
-        printf("k=%d\n", k);
 
         int pipe1[2];
         int pipe2[2];
@@ -193,7 +197,7 @@ int main(int argc, char** argv){
             //El padre escribe por pipe1[0] y lee por pipe2[1]
 
             child = crearHijo();
-            child = saveChild(child, pipe2, pipe1, pid, k);
+            child = saveChild(child, pipe2, pipe1, pid, k, 0);
 
             if(firstChild == NULL){
                 firstChild = child;
@@ -252,12 +256,10 @@ int main(int argc, char** argv){
                 exit(1);
             }
 
-//            printf("%d Se escribio en el hijo %d: %f %f %f %f\n",c, id, radio,valor_real, valor_imaginario, ruido);
-            c++;
-        
+            child->vis_count = child->vis_count + 1;
+            c++;      
 
         }
-//        printf("Se termino de leer visibilidades\n");
 
         // Cuando el padre termina de leer las visibilidades se envia un mensaje de FIN a los hijos
 
@@ -281,14 +283,28 @@ int main(int argc, char** argv){
 
         FILE* fsalida = fopen(out_fileName, "w");
 
-        char* buffer = (char*) malloc(sizeof(char)*200);
+        char* buffer = (char*) malloc(sizeof(char)*150);
+        //char buffer[150];
 
         child= firstChild;
         while(child != NULL){
+
             if(dup2(child->rPipe[0], STDIN_FILENO) == -1){
                 printf("Error en dup2\n");
             }
-            read(STDIN_FILENO,buffer,sizeof(char)*200);
+
+            // Si se leyo la flag b en la linea de comandos
+
+            if(flag == 1){
+
+                // Se imprime por pantalla el pid de cada hijo y la cantidad de visibilidades que proceso
+
+                int vis_num = 4;
+                printf("Soy el hijo %d y procese %d visibilidades\n", child->pid, child->vis_count);
+            }
+
+            read(STDIN_FILENO,buffer,sizeof(char)*150);
+
             fprintf(fsalida,"Disco %d:\n%s\n", child->indice + 1, buffer);
             child = child->sig;
         }
@@ -302,10 +318,6 @@ int main(int argc, char** argv){
         // Hijo realiza EXECVE para ejecutar el progrma vis
 
         if (execl("vis","vis",NULL) == -1){
-
-//            FILE* aux = fopen("hijos.txt", "a");
-//            fprintf(aux, "Error\n");
-//            fclose(aux);
         }
 
     }

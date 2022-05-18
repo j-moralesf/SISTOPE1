@@ -51,7 +51,6 @@ void takeValues(char* str, double* a, double* b, double* z){
         }
     }
     free(num);
-    
 }
 
 // Entradas: Un string con saltos de linea
@@ -125,22 +124,21 @@ void sumarResultados(int* n, double valor_real, double valor_im, double valor_ru
 // Salidas: No retorna nada. Modifica los valores almacenados en los punteros media_real y media_im.
 // Descripcion: Calcula las medias aritmeticas de suma_real y suma_im.
 void calcularMedias(int n, double suma_real, double suma_im, double* media_real, double* media_im){
-	*media_real = suma_real / n;
-	*media_im = suma_im / n;
+    if (n != 0){
+        *media_real = suma_real / n;
+    	*media_im = suma_im / n;
+    }
 }
 
 int main()
 {
 	int n = 0;
 	double suma_real = 0, suma_im = 0, suma_pot = 0, suma_ruido = 0;
-	double media_real, media_im;
+	double media_real = 0, media_im = 0;
 
     int c=0;
 
     while(1){
-
-//        FILE* aux = fopen("hijos.txt", "a");
-//        fprintf(aux, "PID %d\n", getpid());
 
         // Se define un buffer y variables con las que se calculan los resultados
         
@@ -191,23 +189,25 @@ int main()
 
 
         // Si llega la senal de fin
+        // Se envian los resultados al pipe
         if(flag==1){
 
-            // Se calculan los valores finales del disco
+            if(n==0){
+                // Si no hay visibilidades procesadas
+                printf("Procese 0 visibilidades\nMedia real: ---\nMedia imaginaria: ---\nPotencia: ---\nRuido total: ---                          \n*");
+            }
+            else{
+                // Si hay visibilidades procesadas
+                
+                // Se calculan los valores finales del disco
 
-            calcularMedias(n, suma_real, suma_im, &media_real, &media_im);
-
-            // Se envian los resultados al pipe
-
-            printf("Procese %d visibilidades\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
-
-//            fprintf(aux,"*n: %d\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n", n,media_real, media_im, suma_pot, suma_ruido);
+                calcularMedias(n, suma_real, suma_im, &media_real, &media_im);
+                printf("Procese %d visibilidades\nMedia real: %lf\nMedia imaginaria: %lf\nPotencia: %lf\nRuido total: %lf\n*", n,media_real, media_im, suma_pot, suma_ruido);
+            }
 
             // Se finaliza la lectura del pipe
             break;
         }
-
-//        fclose(aux);
         
         c++;
     }
